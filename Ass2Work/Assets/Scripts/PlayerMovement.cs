@@ -40,19 +40,15 @@ public class PlayerMovement : NetworkBehaviour
             return;
         }
 
-        //check the right mouse button input
-        if (!Input.GetMouseButtonDown(0))
-        {
-            return;
-        }
+        //check the W, A, S, D input
+        float horizontalInput = Input.GetAxis("Horizontal");
+        float verticalInput = Input.GetAxis("Vertical");
 
-        //grab mouse cursor information
-        Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
+        //calculate the new position for the player
+        Vector3 newPosition = transform.position + new Vector3(horizontalInput, 0f, verticalInput);
 
-        //check the scene where it is hit
-        if (!Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity)) { return; }
-
-        CmdMove(hit.point);
+        //call the CmdMove() function with the new position
+        CmdMove(newPosition);
     }
     #endregion
 }
