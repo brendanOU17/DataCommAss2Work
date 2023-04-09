@@ -11,8 +11,11 @@ public class MyNetworkPlayer : NetworkBehaviour
     [SerializeField] private Renderer displayColorRenderer = null;
 
     [SyncVar(hook = nameof(HandleDisplayNameUpdate))]
+    
     [SerializeField]
     private string displayName = "Missing Name";
+
+   
 
     [SyncVar(hook = nameof(HandleDisplayColorUpdate))]
     [SerializeField]
