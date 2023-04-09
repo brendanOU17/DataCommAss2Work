@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using UnityEngine;
 using Mirror;
 using TMPro;
-using UnityEngine;
-
 
 public class MyNetworkManager : NetworkManager
 {
-   public override void OnClientConnect()
+    public TMP_InputField nameInputField; // reference to the input field in the scene
+
+    public override void OnClientConnect()
     {
         base.OnClientConnect();
         Debug.Log("you have connected to server");
@@ -19,12 +19,14 @@ public class MyNetworkManager : NetworkManager
         base.OnServerAddPlayer(conn);
         MyNetworkPlayer player = conn.identity.GetComponent<MyNetworkPlayer>();
 
-        player.SetDisplayName($"Player{numPlayers}");
+        string playerName = nameInputField.text; // get name from the input field
+
+        player.SetDisplayName(playerName);
 
         Color displayColor = new Color(Random.RandomRange(0f, 1f), Random.RandomRange(0f, 1f), Random.Range(0f, 1f));
 
-        player.SetDisplayColor (displayColor);
+        player.SetDisplayColor(displayColor);
 
-        Debug.Log($"current number of players");
+        Debug.Log($"current number of players: {numPlayers}");
     }
 }
