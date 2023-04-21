@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using Mirror;
 using TMPro;
-using UnityEngine;
 
 public class MyNetworkPlayer : NetworkBehaviour
 {
@@ -21,19 +20,47 @@ public class MyNetworkPlayer : NetworkBehaviour
     [SerializeField]
     private Color displayColor = Color.black;
 
+    public string DisplayName => displayName;
+    public Color DisplayColor => displayColor;
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        if (!isServer) return;
+
+        if (collision.gameObject.CompareTag("Player"))
+        {
+            MyNetworkPlayer otherPlayer = collision.gameObject.GetComponent<MyNetworkPlayer>();
+
+            if (displayColor == Color.red && otherPlayer.displayColor == Color.green)
+            {
+                SetDisplayColor(Color.green);
+                otherPlayer.SetDisplayColor(Color.red);
+                FindObjectOfType<CountdownTimer>().ResetTimer();
+            }
+        }
+    }
+
+    [Server]
+    public void KillTaggedPlayer()
+    {
+        if (displayColor == Color.red)
+        {
+            // Implement the logic for killing the tagged player.
+            // For example, removing the player from the game or moving them to a respawn point.
+        }
+    }
+
     #region server
     [Server]
     public void SetDisplayName(string newDisplayName)
     {
         displayName = newDisplayName;
-
     }
 
     [Server]
     public void SetDisplayColor(Color newDisplayColor)
     {
         displayColor = newDisplayColor;
-
     }
 
     [Command]
@@ -51,12 +78,12 @@ public class MyNetworkPlayer : NetworkBehaviour
     #endregion
 
     #region client
-    private void HandleDisplayColorUpdate(Color oldColor,Color newColor)
+    private void HandleDisplayColorUpdate(Color oldColor, Color newColor)
     {
         displayColorRenderer.material.SetColor("_BaseColor", newColor);
     }
 
-    private void HandleDisplayNameUpdate(string oldName, string  newName)
+    private void HandleDisplayNameUpdate(string oldName, string newName)
     {
         displayNameText.text = newName;
     }
@@ -71,6 +98,26 @@ public class MyNetworkPlayer : NetworkBehaviour
     private void RpcDisplayNewName(string newDisplayName)
     {
         Debug.Log(newDisplayName);
+    }
+
+    [ClientRpc]
+    public void RpcSelectRandomTaggedPlayer()
+    {
+        if (!isLocalPlayer) return;
+
+        MyNetworkManager networkManager = FindObjectOfType<MyNetworkManager>();
+        int randomIndex = Random.Range(0, networkManager.players.Count);
+        MyNetworkPlayer taggedPlayer = networkManager.players[randomIndex].GetComponent<MyNetworkPlayer>();
+        taggedPlayer.SetDisplayColor(Color.red);
+    }
+
+    [ClientRpc]
+    public void RpcDeclareWinner(GameObject winner)
+    {
+        if (!isLocalPlayer) return;
+
+        MyNetworkPlayer winnerPlayer = winner.GetComponent<MyNetworkPlayer>();
+        FindObjectOfType<UIManager>().ShowWinner(winnerPlayer.DisplayName);
     }
     #endregion
 }

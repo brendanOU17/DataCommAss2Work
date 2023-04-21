@@ -407,7 +407,6 @@ MonoBehaviour:
   syncInterval: 0.1
   displayNameText: {fileID: 3502713832454650761}
   displayColorRenderer: {fileID: 6803941083843305485}
-  nameInputField: {fileID: 0}
   displayName: Missing Name
   displayColor: {r: 0.33578193, g: 1, b: 0, a: 1}
 --- !u!114 &200768027449781227
@@ -465,8 +464,8 @@ NavMeshAgent:
   m_Enabled: 1
   m_AgentTypeID: 0
   m_Radius: 0.5
-  m_Speed: 3.5
-  m_Acceleration: 8
+  m_Speed: 100000
+  m_Acceleration: 1000
   avoidancePriority: 50
   m_AngularSpeed: 120
   m_StoppingDistance: 0
