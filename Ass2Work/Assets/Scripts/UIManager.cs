@@ -10,17 +10,15 @@ public class UIManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI timerText;
     [SerializeField] private GameObject winnerPanel;
     [SerializeField] private TextMeshProUGUI winnerText;
+    [SerializeField] private List<TextMeshProUGUI> playerNames;
+    [SerializeField] private List<TextMeshProUGUI> playerScores;
 
-    private void Awake()
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    private static void CreateInstance()
     {
-        if (instance == null)
-        {
-            instance = this;
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
+        GameObject uiManagerGameObject = new GameObject("UIManager");
+        instance = uiManagerGameObject.AddComponent<UIManager>();
+        DontDestroyOnLoad(uiManagerGameObject);
     }
 
     public void UpdateTimerDisplay(float remainingTime)
@@ -36,5 +34,28 @@ public class UIManager : MonoBehaviour
         winnerPanel.SetActive(true);
         winnerText.text = $"{winnerName} wins!";
     }
+
+    public void UpdatePlayerInfo(int playerIndex, string playerName, int playerScore)
+    {
+        if (playerIndex < MyNetworkManager.MaxPlayers)
+        {
+            playerNames[playerIndex].text = $"{playerIndex + 1} {playerName}:";
+            playerScores[playerIndex].text = $"{playerScore:00}";
+        }
+    }
+
+    public void ResetPlayerInfo()
+    {
+        foreach (var playerName in playerNames)
+        {
+            playerName.text = "";
+        }
+
+        foreach (var playerScore in playerScores)
+        {
+            playerScore.text = "";
+        }
+    }
 }
+
 

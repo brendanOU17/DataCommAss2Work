@@ -9,14 +9,20 @@ public class PlayerMovement : NetworkBehaviour
 
     private void Start()
     {
-        if (!hasAuthority) return;
+        // Enable the NavMeshAgent for all instances
+        agent.enabled = true;
 
-        mainCamera = Camera.main; // Camera reference
+        if (isLocalPlayer)
+        {
+            mainCamera = Camera.main; // Camera reference
+
+        }
     }
 
     private void Update()
     {
-        if (!hasAuthority) return;
+        // Make sure only the local player's input is processed
+        if (!isLocalPlayer) return;
 
         // Get the input from the keyboard
         float horizontalInput = Input.GetAxisRaw("Horizontal");
@@ -38,3 +44,4 @@ public class PlayerMovement : NetworkBehaviour
         }
     }
 }
+

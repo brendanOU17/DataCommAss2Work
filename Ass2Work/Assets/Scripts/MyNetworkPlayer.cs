@@ -1,5 +1,4 @@
-using System.Collections;
-using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using Mirror;
 using TMPro;
@@ -20,34 +19,43 @@ public class MyNetworkPlayer : NetworkBehaviour
     public string DisplayName => displayName;
     public Color DisplayColor => displayColor;
 
-    private void OnCollisionEnter(Collision collision)
+    [SyncVar] public bool hasAuthorityPickup = false;
+    [SyncVar] public float protectionTimer = 0f;
+    [SyncVar] public int score = 0;
+    [SerializeField] private float speedBoost = 1.5f;
+
+    private void Update()
     {
-        if (!isServer) return;
-
-        if (collision.gameObject.CompareTag("Player"))
+        if (isLocalPlayer)
         {
-            MyNetworkPlayer otherPlayer = collision.gameObject.GetComponent<MyNetworkPlayer>();
+            UIManager.instance.UpdatePlayerInfo(connectionToClient.connectionId, displayName, score);
+        }
 
-            if (displayColor == Color.red && otherPlayer.displayColor == Color.green)
+        if (isLocalPlayer && hasAuthorityPickup)
+        {
+            if (protectionTimer > 0f)
             {
-                SetDisplayColor(Color.green);
-                otherPlayer.SetDisplayColor(Color.red);
-                FindObjectOfType<CountdownTimer>().ResetTimer();
+                protectionTimer -= Time.deltaTime;
+            }
+            else
+            {
+                score += (int)(5 * Time.deltaTime);
             }
         }
     }
 
-    [Server]
-    public void KillTaggedPlayer()
+    private void OnTriggerEnter(Collider other)
     {
-        if (displayColor == Color.red)
+        if (!isLocalPlayer || displayColor != Color.red) return;
+
+        if (other.gameObject.CompareTag("Player") && hasAuthorityPickup && protectionTimer <= 0f)
         {
-            // Implement the logic for killing the tagged player.
-            // For example, removing the player from the game or moving them to a respawn point.
+            CmdTransferAuthorityPickup(other.gameObject);
         }
     }
 
-    #region server
+    #region server 
+
     [Server]
     public void SetDisplayName(string newDisplayName)
     {
@@ -61,15 +69,25 @@ public class MyNetworkPlayer : NetworkBehaviour
     }
 
     [Command]
-    private void CmdDIsplayName(string newDisplayName)
+    public void CmdTransferAuthorityPickup(GameObject otherPlayerGameObject)
     {
-        // server authority to limit displayname into 2-20 latter length
-        if (newDisplayName.Length < 2 || newDisplayName.Length > 20)
-        {
-            return;
-        }
-        RpcDisplayNewName(newDisplayName);
-        SetDisplayName(newDisplayName);
+        MyNetworkPlayer otherPlayer = otherPlayerGameObject.GetComponent<MyNetworkPlayer>();
+        if (!hasAuthorityPickup || otherPlayer.hasAuthorityPickup || protectionTimer > 0f) return;
+
+        SetDisplayColor(Color.green);
+        hasAuthorityPickup = false;
+
+        otherPlayer.SetDisplayColor(Color.red);
+        otherPlayer.hasAuthorityPickup = true;
+        otherPlayer.protectionTimer = 5f;
+
+        // Apply speed boost
+        otherPlayer.GetComponent<CharacterController>().Move(otherPlayer.transform.forward * otherPlayer.speedBoost);
+
+        // Make the pickup a child of the player
+        NetworkIdentity pickupIdentity = GetComponentInChildren<NetworkIdentity>();
+        NetworkServer.ReplacePlayerForConnection(otherPlayer.connectionToClient, pickupIdentity.gameObject);
+        pickupIdentity.transform.SetParent(otherPlayer.transform);
     }
 
     #endregion
@@ -83,29 +101,6 @@ public class MyNetworkPlayer : NetworkBehaviour
     private void HandleDisplayNameUpdate(string oldName, string newName)
     {
         displayNameText.text = newName;
-    }
-
-    [ContextMenu("Set This Name")]
-    private void SetThisName()
-    {
-        CmdDIsplayName("My New Name");
-    }
-
-    [ClientRpc]
-    private void RpcDisplayNewName(string newDisplayName)
-    {
-        Debug.Log(newDisplayName);
-    }
-
-    [ClientRpc]
-    public void RpcSelectRandomTaggedPlayer()
-    {
-        if (!isLocalPlayer) return;
-
-        MyNetworkManager networkManager = FindObjectOfType<MyNetworkManager>();
-        int randomIndex = Random.Range(0, networkManager.players.Count);
-        MyNetworkPlayer taggedPlayer = networkManager.players[randomIndex].GetComponent<MyNetworkPlayer>();
-        taggedPlayer.SetDisplayColor(Color.red);
     }
 
     [ClientRpc]

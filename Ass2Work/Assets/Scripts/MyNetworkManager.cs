@@ -9,8 +9,10 @@ public class MyNetworkManager : NetworkManager
     public TMP_InputField nameInputField; // reference to the input field in the scene
     public CountdownTimer countdownTimer;
     public UIManager uiManager;
+    [SerializeField] private GameObject authorityPickupPrefab;
+    public const int MaxPlayers = 8;
 
-    public List<GameObject> players = new List<GameObject>();
+
 
     public override void OnClientConnect()
     {
@@ -20,20 +22,24 @@ public class MyNetworkManager : NetworkManager
 
     public override void OnServerAddPlayer(NetworkConnectionToClient conn)
     {
-        base.OnServerAddPlayer(conn);
-        MyNetworkPlayer player = conn.identity.GetComponent<MyNetworkPlayer>();
+        Transform startPos = GetStartPosition();
+        GameObject player = startPos != null
+            ? Instantiate(playerPrefab, startPos.position, startPos.rotation)
+            : Instantiate(playerPrefab);
 
-        string playerName = nameInputField.text; // get name from the input field
-        player.SetDisplayName(playerName);
+        MyNetworkPlayer networkPlayer = player.GetComponent<MyNetworkPlayer>();
+
+        string playerName = nameInputField.text;
+        networkPlayer.SetDisplayName(playerName);
 
         Color displayColor = Color.green;
-        player.SetDisplayColor(displayColor);
+        networkPlayer.SetDisplayColor(displayColor);
 
-        players.Add(conn.identity.gameObject);
+        NetworkServer.AddPlayerForConnection(conn, player);
 
-        if (players.Count > 1)
+        if (NetworkServer.connections.Count > 1)
         {
-            conn.identity.GetComponent<MyNetworkPlayer>().RpcSelectRandomTaggedPlayer();
+            SpawnAuthorityPickup(conn);
             countdownTimer.StartTimer();
             uiManager.UpdateTimerDisplay(countdownTimer.RemainingTime);
         }
@@ -41,17 +47,25 @@ public class MyNetworkManager : NetworkManager
         Debug.Log($"Current number of players: {numPlayers}");
     }
 
-    public override void OnServerDisconnect(NetworkConnectionToClient conn)
+    [Server]
+    private void SpawnAuthorityPickup(NetworkConnectionToClient conn)
     {
-        players.Remove(conn.identity.gameObject);
-        base.OnServerDisconnect(conn);
+        // Generate a random position within the specified bounds
+        float randomX = Random.Range(-12f, 12f);
+        float randomZ = Random.Range(-6f, 6f);
+        Vector3 randomSpawnPosition = new Vector3(randomX, 0f, randomZ);
 
-        if (players.Count == 1)
-        {
-            players[0].GetComponent<MyNetworkPlayer>().RpcDeclareWinner(players[0]);
-        }
+        GameObject pickup = Instantiate(authorityPickupPrefab, randomSpawnPosition, Quaternion.identity);
+        NetworkServer.Spawn(pickup, conn);
     }
 
-  
-  
+    public override void OnServerDisconnect(NetworkConnectionToClient conn)
+    {
+        base.OnServerDisconnect(conn);
+
+        if (NetworkServer.connections.Count == 1)
+        {
+            NetworkServer.connections[0].identity.GetComponent<MyNetworkPlayer>().RpcDeclareWinner(NetworkServer.connections[0].identity.gameObject);
+        }
+    }
 }
