@@ -650,17 +650,10 @@ MonoBehaviour:
   m_CharacterLimit: 0
   m_OnEndEdit:
     m_PersistentCalls:
-      m_Calls: []
-  m_OnSubmit:
-    m_PersistentCalls:
-      m_Calls: []
-  m_OnSelect:
-    m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 9187101582481103170, guid: 7d6ad7482bbcb47cab888a6122a26f31,
-          type: 3}
-        m_TargetAssemblyTypeName: MyNetworkPlayer, Assembly-CSharp
-        m_MethodName: SetDisplayName
+      - m_Target: {fileID: 1439036574}
+        m_TargetAssemblyTypeName: UIManager, Assembly-CSharp
+        m_MethodName: SubmitNameCoroutine
         m_Mode: 0
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -670,6 +663,12 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+  m_OnSubmit:
+    m_PersistentCalls:
+      m_Calls: []
+  m_OnSelect:
+    m_PersistentCalls:
+      m_Calls: []
   m_OnDeselect:
     m_PersistentCalls:
       m_Calls: []
@@ -5109,7 +5108,6 @@ MonoBehaviour:
   spawnPrefabs:
   - {fileID: 7872406326209604559, guid: cdb2c2edccbe98343b165fb957ecfb5c, type: 3}
   timeInterpolationGui: 0
-  nameInputField: {fileID: 80201830}
   countdownTimer: {fileID: 1832739576}
   uiManager: {fileID: 1439036574}
   authorityPickupPrefab: {fileID: 7872406326209604559, guid: cdb2c2edccbe98343b165fb957ecfb5c,
@@ -5131,22 +5129,8 @@ MonoBehaviour:
   winnerText: {fileID: 1245815563}
   playerNames:
   - {fileID: 1550360850}
-  - {fileID: 1409508092}
-  - {fileID: 53066917}
-  - {fileID: 1124732206}
-  - {fileID: 1546513619}
-  - {fileID: 871263449}
-  - {fileID: 1375737371}
-  - {fileID: 23323763}
   playerScores:
   - {fileID: 1179731423}
-  - {fileID: 1910341593}
-  - {fileID: 1094490351}
-  - {fileID: 487324549}
-  - {fileID: 730769973}
-  - {fileID: 845719447}
-  - {fileID: 773190232}
-  - {fileID: 1964602098}
 --- !u!1 &1539400800
 GameObject:
   m_ObjectHideFlags: 0

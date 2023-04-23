@@ -6,7 +6,7 @@ using TMPro;
 
 public class MyNetworkManager : NetworkManager
 {
-    public TMP_InputField nameInputField; // reference to the input field in the scene
+   
     public CountdownTimer countdownTimer;
     public UIManager uiManager;
     [SerializeField] private GameObject authorityPickupPrefab;
@@ -20,6 +20,8 @@ public class MyNetworkManager : NetworkManager
         Debug.Log("You have connected to the server");
     }
 
+  
+
     public override void OnServerAddPlayer(NetworkConnectionToClient conn)
     {
         Transform startPos = GetStartPosition();
@@ -28,9 +30,6 @@ public class MyNetworkManager : NetworkManager
             : Instantiate(playerPrefab);
 
         MyNetworkPlayer networkPlayer = player.GetComponent<MyNetworkPlayer>();
-
-        string playerName = nameInputField.text;
-        networkPlayer.SetDisplayName(playerName);
 
         Color displayColor = Color.green;
         networkPlayer.SetDisplayColor(displayColor);

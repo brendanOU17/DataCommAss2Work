@@ -23,12 +23,14 @@ public class MyNetworkPlayer : NetworkBehaviour
     [SyncVar] public float protectionTimer = 0f;
     [SyncVar] public int score = 0;
     [SerializeField] private float speedBoost = 1.5f;
+   
 
     private void Update()
     {
-        if (isLocalPlayer)
+        if (isLocalPlayer && UIManager.instance != null)
         {
-            UIManager.instance.UpdatePlayerInfo(connectionToClient.connectionId, displayName, score);
+            int playerIndex = connectionToClient.connectionId % UIManager.instance.GetMaxPlayers();
+            UIManager.instance.UpdatePlayerInfo(playerIndex, displayName, score);
         }
 
         if (isLocalPlayer && hasAuthorityPickup)
@@ -90,6 +92,13 @@ public class MyNetworkPlayer : NetworkBehaviour
         pickupIdentity.transform.SetParent(otherPlayer.transform);
     }
 
+    [Command]
+    public void CmdChangeName(string newName)
+    {
+        if (string.IsNullOrWhiteSpace(newName)) return;
+
+        SetDisplayName(newName);
+    }
     #endregion
 
     #region client
