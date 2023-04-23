@@ -13,7 +13,8 @@ public class UIManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI winnerText;
     [SerializeField] private List<TextMeshProUGUI> playerNames;
     [SerializeField] private List<TextMeshProUGUI> playerScores;
-
+    [SerializeField] private TMP_InputField playerNameInputField;
+    private MyNetworkPlayer localPlayer;
     private void Awake()
     {
         if (instance != null && instance != this)
@@ -26,7 +27,47 @@ public class UIManager : MonoBehaviour
             DontDestroyOnLoad(gameObject);
         }
     }
+    //private void Start()
+    //{
+    //    //// Find the local player and subscribe to the OnNameChanged event
+    //    //localPlayer = FindObjectOfType<MyNetworkPlayer>();
+    //    //if (localPlayer != null && localPlayer.isLocalPlayer)
+    //    //{
+    //    //    localPlayer.OnNameChanged += HandleNameChanged;
+    //    //}
+    //}
 
+    //private void OnDestroy()
+    //{
+    //    if (localPlayer != null && localPlayer.isLocalPlayer)
+    //    {
+    //        localPlayer.OnNameChanged -= HandleNameChanged;
+    //    }
+    //}
+
+    //public void OnNameInputFieldValueChanged(string newName)
+    //{
+        
+    //        localPlayer.CmdChangeName(newName);
+        
+    //}
+
+    //private void HandleNameChanged(string newName)
+    //{
+    //    if (localPlayer != null && localPlayer.isLocalPlayer)
+    //    {
+    //        int playerIndex = localPlayer.connectionToClient.connectionId % MyNetworkManager.MaxPlayers;
+
+    //        if (playerIndex < MyNetworkManager.MaxPlayers && playerNames[playerIndex] != null)
+    //        {
+    //            playerNames[playerIndex].text = $"{playerIndex + 1} {newName}:";
+    //        }
+    //        else
+    //        {
+    //            Debug.LogError($"PlayerNames[{playerIndex}] is not assigned in the UIManager script.");
+    //        }
+    //    }
+    //}
 
     public void UpdateTimerDisplay(float remainingTime)
     {
@@ -46,78 +87,51 @@ public class UIManager : MonoBehaviour
     {
         return MyNetworkManager.MaxPlayers;
     }
-    public void SubmitNameCoroutine(string playerName)
-    {
-        StartCoroutine(SubmitName(playerName));
-    }
 
-    public IEnumerator SubmitName(string playerName)
-    {
-        if (string.IsNullOrWhiteSpace(playerName))
-        {
-            Debug.LogWarning("Player name cannot be empty");
-            yield break;
-        }
+    //public void DisablePlayerNameInputField() 
+    //{
+    //    playerNameInputField.interactable = false;
+    //}
 
-        MyNetworkPlayer localPlayer = null;
-        while (localPlayer == null)
-        {
-            if (NetworkClient.connection != null && NetworkClient.connection.identity != null)
-            {
-                localPlayer = NetworkClient.connection.identity.GetComponent<MyNetworkPlayer>();
-            }
-            yield return new WaitForSeconds(0.1f);
-        }
+    //public void SubmitName(string playerName)
+    //{
+    //    FindObjectOfType<MyNetworkManager>().SubmitPlayerName(playerName);
+    //}
 
-        if (localPlayer != null)
-        {
-            localPlayer.CmdChangeName(playerName);
-        }
-        else
-        {
-            Debug.LogWarning("Local player has not been initialized yet.");
-        }
-    }
+    //public void UpdatePlayerInfo(int playerIndex, string playerName, int playerScore)
+    //{
+    //    if (playerIndex < MyNetworkManager.MaxPlayers)
+    //    {
+    //        if (playerNames[playerIndex] != null)
+    //        {
+    //            playerNames[playerIndex].text = $"{playerIndex + 1} {playerName}:";
+    //        }
+    //        else
+    //        {
+    //            Debug.LogError($"PlayerNames[{playerIndex}] is not assigned in the UIManager script.");
+    //        }
 
+    //        if (playerScores[playerIndex] != null)
+    //        {
+    //            playerScores[playerIndex].text = $"{playerScore:00}";
+    //        }
+    //        else
+    //        {
+    //            Debug.LogError($"PlayerScores[{playerIndex}] is not assigned in the UIManager script.");
+    //        }
+    //    }
+    //}
 
+    //public void ResetPlayerInfo()
+    //{
+    //    foreach (var playerName in playerNames)
+    //    {
+    //        playerName.text = "";
+    //    }
 
-    public void UpdatePlayerInfo(int playerIndex, string playerName, int playerScore)
-    {
-        if (playerIndex < MyNetworkManager.MaxPlayers)
-        {
-            if (playerNames[playerIndex] != null)
-            {
-                playerNames[playerIndex].text = $"{playerIndex + 1} {playerName}:";
-            }
-            else
-            {
-                Debug.LogError($"PlayerNames[{playerIndex}] is not assigned in the UIManager script.");
-            }
-
-            if (playerScores[playerIndex] != null)
-            {
-                playerScores[playerIndex].text = $"{playerScore:00}";
-            }
-            else
-            {
-                Debug.LogError($"PlayerScores[{playerIndex}] is not assigned in the UIManager script.");
-            }
-        }
-    }
-
-
-    public void ResetPlayerInfo()
-    {
-        foreach (var playerName in playerNames)
-        {
-            playerName.text = "";
-        }
-
-        foreach (var playerScore in playerScores)
-        {
-            playerScore.text = "";
-        }
-    }
+    //    foreach (var playerScore in playerScores)
+    //    {
+    //        playerScore.text = "";
+    //    }
+    //}
 }
-
-

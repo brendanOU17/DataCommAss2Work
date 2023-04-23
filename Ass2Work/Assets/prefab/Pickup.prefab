@@ -13,8 +13,8 @@ GameObject:
   - component: {fileID: 2391274668133370351}
   - component: {fileID: 6033531257466543788}
   - component: {fileID: 3611084306915547710}
-  - component: {fileID: -2771629496145567609}
   - component: {fileID: 3506612387160373645}
+  - component: {fileID: -3009976079103395586}
   m_Layer: 0
   m_Name: Pickup
   m_TagString: Untagged
@@ -133,19 +133,6 @@ MonoBehaviour:
   compressRotation: 0
   positionPrecision: 0.01
   scalePrecision: 0.01
---- !u!135 &-2771629496145567609
-SphereCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7872406326209604559}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Radius: 1.22
-  m_Center: {x: 0, y: 0.0000019073486, z: 0}
 --- !u!114 &3506612387160373645
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -161,3 +148,16 @@ MonoBehaviour:
   syncDirection: 0
   syncMode: 0
   syncInterval: 0.1
+--- !u!65 &-3009976079103395586
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7872406326209604559}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 1
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0.0000019073486, z: 0}

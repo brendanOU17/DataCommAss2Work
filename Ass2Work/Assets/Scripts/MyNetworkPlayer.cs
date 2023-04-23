@@ -2,6 +2,7 @@ using System.Linq;
 using UnityEngine;
 using Mirror;
 using TMPro;
+using System;
 
 public class MyNetworkPlayer : NetworkBehaviour
 {
@@ -23,15 +24,16 @@ public class MyNetworkPlayer : NetworkBehaviour
     [SyncVar] public float protectionTimer = 0f;
     [SyncVar] public int score = 0;
     [SerializeField] private float speedBoost = 1.5f;
-   
+    //public event Action<string> OnNameChanged;
 
     private void Update()
     {
-        if (isLocalPlayer && UIManager.instance != null)
-        {
-            int playerIndex = connectionToClient.connectionId % UIManager.instance.GetMaxPlayers();
-            UIManager.instance.UpdatePlayerInfo(playerIndex, displayName, score);
-        }
+        //if (isLocalPlayer)
+        //{
+        //    int playerIndex = connectionToClient.connectionId % MyNetworkManager.MaxPlayers;
+        //    CmdUpdatePlayerInfo(playerIndex, displayName, score);
+        //}
+
 
         if (isLocalPlayer && hasAuthorityPickup)
         {
@@ -54,7 +56,11 @@ public class MyNetworkPlayer : NetworkBehaviour
         {
             CmdTransferAuthorityPickup(other.gameObject);
         }
+
+
     }
+
+   
 
     #region server 
 
@@ -69,6 +75,8 @@ public class MyNetworkPlayer : NetworkBehaviour
     {
         displayColor = newDisplayColor;
     }
+
+  
 
     [Command]
     public void CmdTransferAuthorityPickup(GameObject otherPlayerGameObject)
@@ -88,20 +96,32 @@ public class MyNetworkPlayer : NetworkBehaviour
 
         // Make the pickup a child of the player
         NetworkIdentity pickupIdentity = GetComponentInChildren<NetworkIdentity>();
-        NetworkServer.ReplacePlayerForConnection(otherPlayer.connectionToClient, pickupIdentity.gameObject);
+
+        // Transfer authority to the other player
+        pickupIdentity.RemoveClientAuthority();
+        pickupIdentity.AssignClientAuthority(otherPlayer.connectionToClient);
+
         pickupIdentity.transform.SetParent(otherPlayer.transform);
     }
 
     [Command]
     public void CmdChangeName(string newName)
     {
-        if (string.IsNullOrWhiteSpace(newName)) return;
-
-        SetDisplayName(newName);
+        
+        HandleDisplayNameUpdate(displayName, newName);
     }
+
+    
+
+    //[Command]
+    //private void CmdUpdatePlayerInfo(int playerIndex, string playerName, int playerScore)
+    //{
+    //    RpcUpdatePlayerInfo(playerIndex, playerName, playerScore);
+    //}
+
     #endregion
 
-    #region client
+    #region client 
     private void HandleDisplayColorUpdate(Color oldColor, Color newColor)
     {
         displayColorRenderer.material.SetColor("_BaseColor", newColor);
@@ -120,5 +140,12 @@ public class MyNetworkPlayer : NetworkBehaviour
         MyNetworkPlayer winnerPlayer = winner.GetComponent<MyNetworkPlayer>();
         FindObjectOfType<UIManager>().ShowWinner(winnerPlayer.DisplayName);
     }
+
+    //[ClientRpc]
+    //public void RpcUpdatePlayerInfo(int playerIndex, string playerName, int playerScore)
+    //{
+    //    FindObjectOfType<UIManager>().UpdatePlayerInfo(playerIndex, playerName, playerScore);
+    //}
+  
     #endregion
 }
