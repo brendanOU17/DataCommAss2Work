@@ -5,7 +5,7 @@ using Mirror;
 
 public class CountdownTimer : NetworkBehaviour
 {
-    [SerializeField] private float initialTime = 90f;
+    [SerializeField] private float initialTime = 120f; // 2 minutes
 
     [SyncVar(hook = nameof(OnTimeChanged))]
     private float remainingTime;
@@ -43,10 +43,20 @@ public class CountdownTimer : NetworkBehaviour
 
         isRunning = false;
 
-        MyNetworkManager networkManager = FindObjectOfType<MyNetworkManager>();
-        foreach (GameObject player in networkManager.players)
+        int maxScore = int.MinValue;
+        MyNetworkPlayer winner = null;
+        foreach (var conn in NetworkServer.connections.Values)
         {
-            player.GetComponent<MyNetworkPlayer>().KillTaggedPlayer();
+            MyNetworkPlayer player = conn.identity.GetComponent<MyNetworkPlayer>();
+            if (player.score > maxScore)
+            {
+                maxScore = player.score;
+                winner = player;
+            }
+        }
+        if (winner != null)
+        {
+            winner.RpcDeclareWinner(winner.gameObject);
         }
     }
 
