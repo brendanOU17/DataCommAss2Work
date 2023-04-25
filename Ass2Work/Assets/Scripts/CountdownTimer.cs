@@ -5,13 +5,16 @@ using Mirror;
 
 public class CountdownTimer : NetworkBehaviour
 {
-    [SerializeField] private float initialTime = 120f; // 2 minutes
+    [SerializeField] private float initialTime = 90f;
 
     [SyncVar(hook = nameof(OnTimeChanged))]
     private float remainingTime;
 
-    private bool isRunning = false;
+    [SyncVar]
+    private NetworkIdentity taggedPlayerIdentity;
 
+    private bool isRunning = false;
+    public UIManager uiManager;
     public float RemainingTime { get => remainingTime; }
 
     public void StartTimer()
@@ -43,20 +46,11 @@ public class CountdownTimer : NetworkBehaviour
 
         isRunning = false;
 
-        int maxScore = int.MinValue;
-        MyNetworkPlayer winner = null;
-        foreach (var conn in NetworkServer.connections.Values)
+        if (taggedPlayerIdentity != null)
         {
-            MyNetworkPlayer player = conn.identity.GetComponent<MyNetworkPlayer>();
-            if (player.score > maxScore)
-            {
-                maxScore = player.score;
-                winner = player;
-            }
-        }
-        if (winner != null)
-        {
-            winner.RpcDeclareWinner(winner.gameObject);
+            MyNetworkPlayer taggedPlayer = taggedPlayerIdentity.GetComponent<MyNetworkPlayer>();
+            taggedPlayer.KillTaggedPlayer();
+            RpcSelectRandomTaggedPlayer();
         }
     }
 
@@ -64,4 +58,22 @@ public class CountdownTimer : NetworkBehaviour
     {
         UIManager.instance.UpdateTimerDisplay(newTime);
     }
+
+    [ClientRpc]
+    private void RpcSelectRandomTaggedPlayer()
+    {
+        if (!isLocalPlayer) return;
+
+        MyNetworkManager networkManager = FindObjectOfType<MyNetworkManager>();
+        int randomIndex = Random.Range(0, networkManager.players.Count);
+        MyNetworkPlayer taggedPlayer = networkManager.players[randomIndex].GetComponent<MyNetworkPlayer>();
+        taggedPlayer.SetDisplayColor(Color.red);
+        taggedPlayer.isTagged = true;
+        taggedPlayerIdentity = taggedPlayer.GetComponent<NetworkIdentity>();
+        taggedPlayerIdentity.AssignClientAuthority(connectionToClient);
+        StartTimer();
+        uiManager.UpdateTimerDisplay(RemainingTime);
+    }
+
 }
+

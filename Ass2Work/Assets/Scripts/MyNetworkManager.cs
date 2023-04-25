@@ -9,86 +9,83 @@ public class MyNetworkManager : NetworkManager
 
     public CountdownTimer countdownTimer;
     public UIManager uiManager;
-    [SerializeField] private GameObject authorityPickupPrefab;
-    public const int MaxPlayers = 8;
+
+    public List<GameObject> players = new List<GameObject>();
 
     public override void OnClientConnect()
     {
         base.OnClientConnect();
         Debug.Log("You have connected to the server");
-       
     }
-
-
 
     public override void OnServerAddPlayer(NetworkConnectionToClient conn)
     {
-       
+        base.OnServerAddPlayer(conn);
+        Debug.Log($"Player connection: {conn}"); // Check the player's connection value
+        MyNetworkPlayer player = conn.identity.GetComponent<MyNetworkPlayer>();
 
-        Transform startPos = GetStartPosition();
-        GameObject player = startPos != null
-            ? Instantiate(playerPrefab, startPos.position, startPos.rotation)
-            : Instantiate(playerPrefab);
-
-        MyNetworkPlayer networkPlayer = player.GetComponent<MyNetworkPlayer>();
-       
-        networkPlayer.SetDisplayName($"Player{numPlayers}");
+        player.SetDisplayName($"Player{numPlayers}");
         Color displayColor = Color.green;
-        networkPlayer.SetDisplayColor(displayColor);
-      
-        NetworkServer.AddPlayerForConnection(conn, player);
+        player.SetDisplayColor(displayColor);
 
-        if (NetworkServer.connections.Count > 1)
+        players.Add(conn.identity.gameObject);
+
+        if (players.Count > 1)
         {
-            SpawnAuthorityPickup(conn);
-            countdownTimer.StartTimer();
-            uiManager.UpdateTimerDisplay(countdownTimer.RemainingTime);
+            bool isTaggedPlayerPresent = false;
+
+            foreach (GameObject playerObj in players)
+            {
+                MyNetworkPlayer playerInstance = playerObj.GetComponent<MyNetworkPlayer>();
+                if (playerInstance.isTagged)
+                {
+                    isTaggedPlayerPresent = true;
+                    break;
+                }
+            }
+
+            if (!isTaggedPlayerPresent)
+            {
+                StartCoroutine(AssignAuthorityWithDelay(conn.identity, players));
+            }
         }
 
         Debug.Log($"Current number of players: {numPlayers}");
+
     }
+
+    public IEnumerator AssignAuthorityWithDelay(NetworkIdentity taggedPlayerIdentity, List<GameObject> players)
+    {
+        yield return new WaitForSeconds(0.1f);
+        Debug.Log($"Now Assgining TaggedPlayer");
+        MyNetworkPlayer taggedPlayer = players[Random.Range(1, players.Count)].GetComponent<MyNetworkPlayer>();
+        taggedPlayer.SetDisplayColor(Color.red);
+        taggedPlayer.isTagged = true;
+        taggedPlayer.GetComponent<NetworkIdentity>();
+        Debug.Log($"Tagged Player: {taggedPlayer.DisplayName} (isTagged: {taggedPlayer.isTagged})");
+        countdownTimer.StartTimer();
+        uiManager.UpdateTimerDisplay(countdownTimer.RemainingTime);
+        TaggedStatus taggedStatusInstance = FindObjectOfType<TaggedStatus>();
+        taggedStatusInstance.AssignClientAuthority(taggedPlayerIdentity.connectionToClient);
+        Debug.Log($"Tagged Player {taggedPlayer.DisplayName} has authority? : {taggedStatusInstance.isOwned}");
+    }
+
 
     public override void OnServerDisconnect(NetworkConnectionToClient conn)
     {
+        players.Remove(conn.identity.gameObject);
         base.OnServerDisconnect(conn);
 
-        if (NetworkServer.connections.Count == 1)
+        if (players.Count == 1)
         {
-            NetworkServer.connections[0].identity.GetComponent<MyNetworkPlayer>().RpcDeclareWinner(NetworkServer.connections[0].identity.gameObject);
+            MyNetworkPlayer remainingPlayer = players[0].GetComponent<MyNetworkPlayer>();
+            if (remainingPlayer.isTagged)
+            {
+                remainingPlayer.RpcDeclareWinner(players[0]);
+            }
         }
     }
 
-    public void SubmitPlayerName(string playerName)
-    {
-        if (string.IsNullOrWhiteSpace(playerName))
-        {
-            Debug.LogWarning("Player name cannot be empty");
-            return;
-        }
-
-        // Set player name and connect to the server
-        PlayerPrefs.SetString("playerName", playerName);
-        StartClient();
-    }
-
-
-    #region Server
-    [Server]
-    private void SpawnAuthorityPickup(NetworkConnectionToClient conn)
-    {
-        // Generate a random position within the specified bounds
-        float randomX = Random.Range(-12f, 12f);
-        float randomZ = Random.Range(-6f, 6f);
-        Vector3 randomSpawnPosition = new Vector3(randomX, 0f, randomZ);
-
-        GameObject pickup = Instantiate(authorityPickupPrefab, randomSpawnPosition, Quaternion.identity);
-        NetworkServer.Spawn(pickup);
-
-        pickup.GetComponent<AuthorityPickup>().AssignServerAuthority();
-
-    }
-
-
-    #endregion
-
+  
+  
 }
