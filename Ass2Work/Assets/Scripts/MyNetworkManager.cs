@@ -9,10 +9,13 @@ public class MyNetworkManager : NetworkManager
 
     public CountdownTimer countdownTimer;
     public UIManager uiManager;
-    public MyNetworkPlayer mynetworkplayer;
+    public GameObject authorityPickupPrefab;
     public List<GameObject> players = new List<GameObject>();
-    public bool isTaggedPlayerPresent;
- 
+    public const int MaxPlayers = 8;
+    private bool authorityPickupSpawned = false;
+
+
+
 
 
     public override void OnClientConnect()
@@ -20,79 +23,77 @@ public class MyNetworkManager : NetworkManager
         base.OnClientConnect();
         Debug.Log("You have connected to the server");
        
-
-
     }
 
 
 
     public override void OnServerAddPlayer(NetworkConnectionToClient conn)
     {
-        base.OnServerAddPlayer(conn);
-        Debug.Log($"Player connection: {conn}"); // Check the player's connection value
-        MyNetworkPlayer player = conn.identity.GetComponent<MyNetworkPlayer>();
-
-        player.SetDisplayName($"Player{numPlayers}");
-        Color displayColor = Color.green;
-        player.SetDisplayColor(displayColor);
-        players.Add(conn.identity.gameObject);
-        RandomAssignAuthority(players);
-
-        Debug.Log($"Current number of players: {numPlayers}");
-
-    }
-
-    public void RandomAssignAuthority(List<GameObject> players)
-    {
-        Debug.Log("randomAssign is being used");
-        if (players.Count > 1)
+        if (players.Count < MaxPlayers)
         {
-            isTaggedPlayerPresent = false;
+                base.OnServerAddPlayer(conn);
+                Debug.Log($"Player connection: {conn}"); // Check the player's connection value
+                MyNetworkPlayer player = conn.identity.GetComponent<MyNetworkPlayer>();
 
-            foreach (GameObject playerObj in players)
-            {
-                MyNetworkPlayer playerInstance = playerObj.GetComponent<MyNetworkPlayer>();
-                if (playerInstance.isTagged)
+                player.SetDisplayName($"Player{numPlayers}");
+                Color displayColor = Color.green;
+                player.SetDisplayColor(displayColor);
+                players.Add(conn.identity.gameObject);
+
+
+                if (players.Count > 1 && !authorityPickupSpawned )
                 {
-                    isTaggedPlayerPresent = true;
-                    break;
+                    
+                        SpawnAuthorityPickup(conn);
+                        authorityPickupSpawned = true;
+                        countdownTimer.StartTimer();
+                        uiManager.UpdateTimerDisplay(countdownTimer.RemainingTime);
+                    
                 }
-            }
 
-            if (!isTaggedPlayerPresent)
-            {
-                Debug.Log($"Now Assgining TaggedPlayer");
-                MyNetworkPlayer taggedPlayer = players[Random.Range(0, players.Count)].GetComponent<MyNetworkPlayer>();
-                taggedPlayer.SetDisplayColor(Color.red);
-                taggedPlayer.isTagged = true;
-                taggedPlayer.GetComponent<NetworkIdentity>();
-                Debug.Log($"Tagged Player: {taggedPlayer.DisplayName} (isTagged: {taggedPlayer.isTagged})");
-                countdownTimer.StartTimer();
-                uiManager.UpdateTimerDisplay(countdownTimer.RemainingTime);
-
-                TaggedStatus taggedStatusInstance = FindObjectOfType<TaggedStatus>();
-                taggedStatusInstance.AssignClientAuthority(taggedPlayer.connectionToClient);
-                Debug.Log($"Tagged Player {taggedPlayer.DisplayName} has authority? : {taggedStatusInstance.isOwned}");
-            }
+                Debug.Log($"Current number of players: {numPlayers}");
         }
+       
     }
-
 
     public override void OnServerDisconnect(NetworkConnectionToClient conn)
     {
+        // Find the AuthorityPickup object with authority
+        AuthorityPickup authorityPickup = FindObjectOfType<AuthorityPickup>();
+        if (authorityPickup != null && authorityPickup.connectionToClient == conn)
+        {
+            // Remove authority from the client before disconnecting
+            authorityPickup.GetComponent<NetworkIdentity>().RemoveClientAuthority();
+        }
         players.Remove(conn.identity.gameObject);
-        base.OnServerDisconnect(conn);
 
         if (players.Count == 1)
         {
             MyNetworkPlayer remainingPlayer = players[0].GetComponent<MyNetworkPlayer>();
-            if (remainingPlayer.isTagged)
-            {
-                remainingPlayer.RpcDeclareWinner(players[0]);
-            }
+            remainingPlayer.RpcDeclareWinner(players[0]);
+ 
         }
+
+        base.OnServerDisconnect(conn);
+
+       
     }
 
-  
-  
+    #region Server
+    [Server]
+    private void SpawnAuthorityPickup(NetworkConnectionToClient conn)
+    {
+        // Generate a random position within the specified bounds
+        float randomX = Random.Range(-12f, 12f);
+        float randomZ = Random.Range(-6f, 6f);
+        Vector3 randomSpawnPosition = new Vector3(randomX, 0f, randomZ);
+
+        GameObject pickup = Instantiate(authorityPickupPrefab, randomSpawnPosition, Quaternion.identity);
+        NetworkServer.Spawn(pickup); // Spawn the pickup on the network
+
+    }
+
+
+    #endregion
+
 }

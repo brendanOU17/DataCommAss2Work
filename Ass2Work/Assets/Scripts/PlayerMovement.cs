@@ -6,8 +6,7 @@ public class PlayerMovement : NetworkBehaviour
 {
     [SerializeField] private NavMeshAgent agent = null;
     private Camera mainCamera;
-    public float movementSpeed =5.0f;
-
+    [SyncVar] public float movementSpeed = 5.0f;
     private void Start()
     {
         // Enable the NavMeshAgent for all instances
