@@ -409,9 +409,11 @@ MonoBehaviour:
   syncInterval: 0.1
   displayNameText: {fileID: 3502713832454650761}
   displayColorRenderer: {fileID: 6803941083843305485}
+  playerMovement: {fileID: 2613023496271194544}
+  authorityitem: {fileID: 3506612387160373645, guid: cdb2c2edccbe98343b165fb957ecfb5c,
+    type: 3}
   displayName: Missing Name
   displayColor: {r: 0.33578193, g: 1, b: 0, a: 1}
-  taggedPlayer: {fileID: 0}
 --- !u!114 &200768027449781227
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -457,6 +459,7 @@ MonoBehaviour:
   syncMode: 0
   syncInterval: 0.1
   agent: {fileID: 5536180372205762037}
+  movementSpeed: 5
 --- !u!195 &5536180372205762037
 NavMeshAgent:
   m_ObjectHideFlags: 0

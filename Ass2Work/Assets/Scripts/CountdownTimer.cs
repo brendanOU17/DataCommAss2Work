@@ -43,15 +43,14 @@ public class CountdownTimer : NetworkBehaviour
 
         isRunning = false;
 
-        int maxScore = int.MinValue;
         MyNetworkPlayer winner = null;
         foreach (var conn in NetworkServer.connections.Values)
         {
             MyNetworkPlayer player = conn.identity.GetComponent<MyNetworkPlayer>();
-            if (player.score > maxScore)
+            if (player.displayColor == Color.red) // Check if the player has authority over the object (based on display color)
             {
-                maxScore = player.score;
                 winner = player;
+                break;
             }
         }
         if (winner != null)

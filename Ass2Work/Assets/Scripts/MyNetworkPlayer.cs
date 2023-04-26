@@ -2,59 +2,43 @@ using System.Linq;
 using UnityEngine;
 using Mirror;
 using TMPro;
-using System;
 
 public class MyNetworkPlayer : NetworkBehaviour
 {
     [SerializeField] private TMP_Text displayNameText = null;
     [SerializeField] private Renderer displayColorRenderer = null;
+    [SerializeField] private PlayerMovement playerMovement = null;
+    [SerializeField] private AuthorityPickup authorityitem = null;
 
     [SyncVar(hook = nameof(HandleDisplayNameUpdate))]
     [SerializeField]
     private string displayName = "Missing Name";
 
     [SyncVar(hook = nameof(HandleDisplayColorUpdate))]
-    [SerializeField]
-    private Color displayColor = Color.black;
+    [SerializeField] public Color displayColor = Color.black;
+
+    private float pickupCooldown = 0f;
+    private float pickupDelay = 0.5f;
 
     public string DisplayName => displayName;
     public Color DisplayColor => displayColor;
 
-    [SyncVar] public bool hasAuthorityPickup = false;
-    [SyncVar] public float protectionTimer = 0f;
-    [SyncVar] public int score = 0;
-    [SerializeField] private float speedBoost = 1.5f;
-    //public event Action<string> OnNameChanged;
-
     private void Update()
     {
-        //if (isLocalPlayer)
-        //{
-        //    int playerIndex = connectionToClient.connectionId % MyNetworkManager.MaxPlayers;
-        //    CmdUpdatePlayerInfo(playerIndex, displayName, score);
-        //}
-
-
-        if (isLocalPlayer && hasAuthorityPickup)
+        if (pickupCooldown > 0)
         {
-            if (protectionTimer > 0f)
-            {
-                protectionTimer -= Time.deltaTime;
-            }
-            else
-            {
-                score += (int)(5 * Time.deltaTime);
-            }
+            pickupCooldown -= Time.deltaTime;
         }
     }
 
+
     private void OnTriggerEnter(Collider other)
     {
-        if (!isLocalPlayer || displayColor != Color.red) return;
+        if (!isLocalPlayer || pickupCooldown > 0) return;
 
-        if (other.gameObject.CompareTag("Player") && hasAuthorityPickup && protectionTimer <= 0f)
+        if (other.gameObject.CompareTag("AuthorityPickUp"))
         {
-            CmdTransferAuthorityPickup(other.gameObject);
+            CmdApplyAuthorityPickup(other.gameObject);
         }
 
 
@@ -79,31 +63,37 @@ public class MyNetworkPlayer : NetworkBehaviour
   
 
     [Command]
-    public void CmdTransferAuthorityPickup(GameObject otherPlayerGameObject)
+    public void CmdApplyAuthorityPickup(GameObject authorityGameObject)
     {
-        MyNetworkPlayer otherPlayer = otherPlayerGameObject.GetComponent<MyNetworkPlayer>();
-        if (!hasAuthorityPickup || otherPlayer.hasAuthorityPickup || protectionTimer > 0f) return;
+        // Get the NetworkIdentity component of the pickup object
+        NetworkIdentity pickupIdentity = authorityGameObject.GetComponent<NetworkIdentity>();
+        // Move the pickup to a random position
+        float randomX = Random.Range(-12f, 12f);
+        float randomZ = Random.Range(-6f, 6f);
+        Vector3 randomSpawnPosition = new Vector3(randomX, 0f, randomZ);
 
-        SetDisplayColor(Color.green);
-        hasAuthorityPickup = false;
+        if (displayColor == Color.red && connectionToClient.identity.isOwned)
+        {
+            authorityGameObject.transform.position = randomSpawnPosition;
+        }
+       if(displayColor == Color.green && connectionToClient.identity.isOwned)
+        { 
+            
+           // Remove authority from the current client
+            pickupIdentity.RemoveClientAuthority();
+            displayColor = Color.green;
+            playerMovement.movementSpeed = 5.0f;
+            Debug.Log($"Authority removed from {connectionToClient.identity.name}");
+            // Assign authority to the current client
+            pickupIdentity.AssignClientAuthority(connectionToClient);
+            displayColor = Color.red;
+            playerMovement.movementSpeed = 15.0f;
+            Debug.Log($"Authority assigned to {connectionToClient.identity.name}");
+        }
 
-        otherPlayer.SetDisplayColor(Color.red);
-        otherPlayer.hasAuthorityPickup = true;
-        otherPlayer.protectionTimer = 5f;
-
-        // Apply speed boost
-        otherPlayer.GetComponent<CharacterController>().Move(otherPlayer.transform.forward * otherPlayer.speedBoost);
-
-        // Make the pickup a child of the player
-        NetworkIdentity pickupIdentity = GetComponentInChildren<NetworkIdentity>();
-
-        // Transfer authority to the other player
-        pickupIdentity.RemoveClientAuthority();
-        pickupIdentity.AssignClientAuthority(otherPlayer.connectionToClient);
-
-        pickupIdentity.transform.SetParent(otherPlayer.transform);
+        authorityGameObject.transform.position = randomSpawnPosition;
     }
-
+  
     [Command]
     public void CmdChangeName(string newName)
     {
@@ -111,13 +101,7 @@ public class MyNetworkPlayer : NetworkBehaviour
         HandleDisplayNameUpdate(displayName, newName);
     }
 
-    
 
-    //[Command]
-    //private void CmdUpdatePlayerInfo(int playerIndex, string playerName, int playerScore)
-    //{
-    //    RpcUpdatePlayerInfo(playerIndex, playerName, playerScore);
-    //}
 
     #endregion
 
@@ -132,6 +116,7 @@ public class MyNetworkPlayer : NetworkBehaviour
         displayNameText.text = newName;
     }
 
+
     [ClientRpc]
     public void RpcDeclareWinner(GameObject winner)
     {
@@ -141,11 +126,7 @@ public class MyNetworkPlayer : NetworkBehaviour
         FindObjectOfType<UIManager>().ShowWinner(winnerPlayer.DisplayName);
     }
 
-    //[ClientRpc]
-    //public void RpcUpdatePlayerInfo(int playerIndex, string playerName, int playerScore)
-    //{
-    //    FindObjectOfType<UIManager>().UpdatePlayerInfo(playerIndex, playerName, playerScore);
-    //}
+  
   
     #endregion
 }

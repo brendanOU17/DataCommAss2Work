@@ -6,7 +6,7 @@ public class PlayerMovement : NetworkBehaviour
 {
     [SerializeField] private NavMeshAgent agent = null;
     private Camera mainCamera;
-
+    [SyncVar] public float movementSpeed = 5.0f;
     private void Start()
     {
         // Enable the NavMeshAgent for all instances
@@ -37,7 +37,7 @@ public class PlayerMovement : NetworkBehaviour
             transform.rotation = Quaternion.LookRotation(movement);
 
             // Calculate the new position based on the movement direction
-            Vector3 newPosition = transform.position + movement * 5.0f * Time.deltaTime;
+            Vector3 newPosition = transform.position + movement * movementSpeed * Time.deltaTime;
 
             // Move the player to the new position using the NavMeshAgent
             agent.SetDestination(newPosition);
