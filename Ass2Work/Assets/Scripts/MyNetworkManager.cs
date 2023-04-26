@@ -12,8 +12,8 @@ public class MyNetworkManager : NetworkManager
     public GameObject authorityPickupPrefab;
     public List<GameObject> players = new List<GameObject>();
     public const int MaxPlayers = 8;
+    private bool authorityPickupSpawned = false;
 
-   
 
 
 
@@ -29,7 +29,7 @@ public class MyNetworkManager : NetworkManager
 
     public override void OnServerAddPlayer(NetworkConnectionToClient conn)
     {
-        if (players.Count <= 8)
+        if (players.Count < MaxPlayers)
         {
                 base.OnServerAddPlayer(conn);
                 Debug.Log($"Player connection: {conn}"); // Check the player's connection value
@@ -41,11 +41,14 @@ public class MyNetworkManager : NetworkManager
                 players.Add(conn.identity.gameObject);
 
 
-                if (players.Count > 1  )
+                if (players.Count > 1 && !authorityPickupSpawned )
                 {
-                    SpawnAuthorityPickup(conn);
-                    countdownTimer.StartTimer();
-                    uiManager.UpdateTimerDisplay(countdownTimer.RemainingTime);
+                    
+                        SpawnAuthorityPickup(conn);
+                        authorityPickupSpawned = true;
+                        countdownTimer.StartTimer();
+                        uiManager.UpdateTimerDisplay(countdownTimer.RemainingTime);
+                    
                 }
 
                 Debug.Log($"Current number of players: {numPlayers}");
@@ -62,8 +65,18 @@ public class MyNetworkManager : NetworkManager
             // Remove authority from the client before disconnecting
             authorityPickup.GetComponent<NetworkIdentity>().RemoveClientAuthority();
         }
+        players.Remove(conn.identity.gameObject);
+
+        if (players.Count == 1)
+        {
+            MyNetworkPlayer remainingPlayer = players[0].GetComponent<MyNetworkPlayer>();
+            remainingPlayer.RpcDeclareWinner(players[0]);
+ 
+        }
 
         base.OnServerDisconnect(conn);
+
+       
     }
 
     #region Server

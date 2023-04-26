@@ -72,26 +72,33 @@ public class MyNetworkPlayer : NetworkBehaviour
         float randomZ = Random.Range(-6f, 6f);
         Vector3 randomSpawnPosition = new Vector3(randomX, 0f, randomZ);
 
-        if (displayColor == Color.red && connectionToClient.identity.isOwned)
+        if (displayColor == Color.red)
         {
+            // Client already has authority and is red, just move the pickup object
             authorityGameObject.transform.position = randomSpawnPosition;
         }
-       if(displayColor == Color.green && connectionToClient.identity.isOwned)
-        { 
-            
-           // Remove authority from the current client
-            pickupIdentity.RemoveClientAuthority();
-            displayColor = Color.green;
-            playerMovement.movementSpeed = 5.0f;
-            Debug.Log($"Authority removed from {connectionToClient.identity.name}");
+        else if (displayColor == Color.green)
+        {
+            // Remove authority from the current owner
+            if (pickupIdentity.connectionToClient != null)
+            {
+                MyNetworkPlayer previousOwner = pickupIdentity.connectionToClient.identity.GetComponent<MyNetworkPlayer>();
+                previousOwner.SetDisplayColor(Color.green);
+                previousOwner.playerMovement.movementSpeed = 5.0f;
+                Debug.Log($"Authority removed from {pickupIdentity.connectionToClient.identity.name}");
+                pickupIdentity.RemoveClientAuthority();
+            }
+
             // Assign authority to the current client
             pickupIdentity.AssignClientAuthority(connectionToClient);
-            displayColor = Color.red;
+
+            SetDisplayColor(Color.red);
             playerMovement.movementSpeed = 15.0f;
             Debug.Log($"Authority assigned to {connectionToClient.identity.name}");
-        }
 
-        authorityGameObject.transform.position = randomSpawnPosition;
+            // Move the pickup object
+            authorityGameObject.transform.position = randomSpawnPosition;
+        }
     }
   
     [Command]
