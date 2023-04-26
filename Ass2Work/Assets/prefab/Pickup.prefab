@@ -17,7 +17,7 @@ GameObject:
   - component: {fileID: -3009976079103395586}
   m_Layer: 0
   m_Name: Pickup
-  m_TagString: Untagged
+  m_TagString: AuthorityPickUp
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -148,6 +148,7 @@ MonoBehaviour:
   syncDirection: 0
   syncMode: 0
   syncInterval: 0.1
+  authorityPickUpIdentity: {fileID: 6033531257466543788}
 --- !u!65 &-3009976079103395586
 BoxCollider:
   m_ObjectHideFlags: 0
