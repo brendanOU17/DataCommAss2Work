@@ -50,7 +50,7 @@ public class CountdownTimer : NetworkBehaviour
         {
             MyNetworkPlayer taggedPlayer = taggedPlayerIdentity.GetComponent<MyNetworkPlayer>();
             taggedPlayer.KillTaggedPlayer();
-            RpcSelectRandomTaggedPlayer();
+            SelectRandomTaggedPlayer();
         }
     }
 
@@ -59,8 +59,8 @@ public class CountdownTimer : NetworkBehaviour
         UIManager.instance.UpdateTimerDisplay(newTime);
     }
 
-    [ClientRpc]
-    private void RpcSelectRandomTaggedPlayer()
+    [Server]
+    private void SelectRandomTaggedPlayer()
     {
         if (!isLocalPlayer) return;
 

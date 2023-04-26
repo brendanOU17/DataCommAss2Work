@@ -6,37 +6,48 @@ using TMPro;
 
 public class MyNetworkPlayer : NetworkBehaviour
 {
+    [Header("References")]
     [SerializeField] private TMP_Text displayNameText = null;
     [SerializeField] private Renderer displayColorRenderer = null;
+    [SerializeField] private TaggedStatus taggedStatus = null;
+    [SerializeField] private PlayerMovement playerMovement = null;
 
+
+    [Header("Settings")]
+    [SerializeField] private float tagCooldown = 5.0f;
+    [SerializeField] public GameObject taggedStatusObject;
+
+
+    [Header("SyncVars")]
     [SyncVar(hook = nameof(HandleDisplayNameUpdate))]
-    [SerializeField]
     private string displayName = "Missing Name";
 
     [SyncVar(hook = nameof(HandleDisplayColorUpdate))]
-    [SerializeField]
     private Color displayColor = Color.black;
 
     [SyncVar(hook = nameof(HandleIsTaggedUpdate))]
-    [SerializeField]
     public bool isTagged = false;
-    [SerializeField] private TaggedStatus taggedStatus = null;
-    [SerializeField] private float tagCooldown = 5.0f;
+
+
     private bool canTag = true;
-    [SerializeField] public GameObject taggedStatusObject;
-    public delegate void AuthorityChangedDelegate(bool isOwner);
-    public event AuthorityChangedDelegate AuthorityChanged;
+    private bool isInTaggingProcess = false;
 
     public string DisplayName => displayName;
     public Color DisplayColor => displayColor;
+
+    public delegate void AuthorityChangedDelegate(bool isOwner);
+    public event AuthorityChangedDelegate AuthorityChanged;
+   
 
     private void Start()
     {
         
             taggedStatus = FindObjectOfType<TaggedStatus>();
             taggedStatusObject = taggedStatus.gameObject;
-
+          
     }
+ 
+
     #region server
     [ServerCallback]
     private void OnTriggerEnter(Collider other)
@@ -49,37 +60,41 @@ public class MyNetworkPlayer : NetworkBehaviour
 
             if (displayColor == Color.red && otherPlayer.displayColor == Color.green)
             {
+                if (otherPlayer.isInTaggingProcess) return;
+                isInTaggingProcess = true;
+                otherPlayer.isInTaggingProcess = true;
+
                 SetDisplayColor(Color.green);
                 otherPlayer.SetDisplayColor(Color.red);
-                //FindObjectOfType<CountdownTimer>().ResetTimer();
 
                 // Transfer authority to the newly tagged player
                 NetworkIdentity otherPlayerIdentity = otherPlayer.GetComponent<NetworkIdentity>();
                 NetworkIdentity thisPlayerIdentity = GetComponent<NetworkIdentity>();
-
-                StartCoroutine(TransferAuthorityCoroutine(thisPlayerIdentity, otherPlayerIdentity, otherPlayer.connectionToClient));
+                TransferAuthority(thisPlayerIdentity, otherPlayerIdentity, otherPlayer.connectionToClient);
 
                 cmdSetIsTagged(false);
                 otherPlayer.cmdSetIsTagged(true);
                 StartCoroutine(TagCooldownCoroutine());
-            }
 
+                StartCoroutine(ResetTaggingProcess(otherPlayer));
+            }
         }
     }
-    //helpppp
+   [Server]
+private IEnumerator ResetTaggingProcess(MyNetworkPlayer otherPlayer)
+{
+    yield return new WaitForSeconds(0.5f);
+    isInTaggingProcess = false;
+    otherPlayer.isInTaggingProcess = false;
+}
 
-    [Server]
-    private IEnumerator TransferAuthorityCoroutine(NetworkIdentity oldPlayerIdentity, NetworkIdentity newPlayerIdentity, NetworkConnectionToClient newOwnerConnection)
+    [Command]
+    public void TransferAuthority(NetworkIdentity oldPlayerIdentity, NetworkIdentity newPlayerIdentity, NetworkConnectionToClient newOwnerConnection)
     {
-        RemoveAuthority(taggedStatusObject.GetComponent<NetworkIdentity>());
-        Debug.Log($"Old tagged player's authority status: {oldPlayerIdentity.isOwned}");
+        //RemoveAuthority(taggedStatusObject.GetComponent<NetworkIdentity>());
+        //Debug.Log($"Old tagged player's authority status: {oldPlayerIdentity.isOwned}");
 
         // Wait until authority is removed
-        while (taggedStatusObject.GetComponent<NetworkIdentity>().isOwned)
-        {
-            yield return new WaitForEndOfFrame();
-        }
-
         taggedStatus.TransferAuthority( newOwnerConnection);
         Debug.Log($"New tagged player's authority status: {newPlayerIdentity.isOwned}");
 
@@ -88,18 +103,8 @@ public class MyNetworkPlayer : NetworkBehaviour
         newPlayerIdentity.GetComponent<MyNetworkPlayer>().AuthorityChanged?.Invoke(true);
     }
 
-    public override void OnStartClient()
-    {
-        AuthorityChanged += OnAuthorityChanged;
-        HandleDisplayColorUpdate(displayColor, displayColor);
-        HandleDisplayNameUpdate(displayName, displayName);
-    }
-
-    public override void OnStopClient()
-    {
-        AuthorityChanged -= OnAuthorityChanged;
-    }
-    [Command]
+   
+    [Server]
     public void cmdSetIsTagged(bool newIsTagged)
     {
         isTagged = newIsTagged;
@@ -109,24 +114,15 @@ public class MyNetworkPlayer : NetworkBehaviour
     {
         if (isOwner)
         {
-            cmdSetIsTagged(false);
+            cmdSetIsTagged(true);
+            playerMovement.movementSpeed = 15.0f;
         }
         else
         {
-            cmdSetIsTagged(true);
+            cmdSetIsTagged(false);
+            playerMovement.movementSpeed = 5.0f;
         }
     }
-
-    
-
-    [Server]
-    public void RemoveAuthority(NetworkIdentity taggedStatusIdentity)
-    {
-        taggedStatusIdentity.RemoveClientAuthority();
-        Debug.Log($"Removed authority. Connection: {taggedStatusIdentity.connectionToClient}. Authority status: {taggedStatusIdentity.isOwned}");
-
-    }
-
 
     [Server]
     private IEnumerator TagCooldownCoroutine()
@@ -148,6 +144,8 @@ public class MyNetworkPlayer : NetworkBehaviour
     {
         if (displayColor == Color.red)
         {
+            taggedStatus.RemoveAuthority();
+            Destroy(gameObject);
             // Implement the logic for killing the tagged player.
             // For example, removing the player from the game or moving them to a respawn point.
         }
@@ -213,8 +211,17 @@ public class MyNetworkPlayer : NetworkBehaviour
         MyNetworkPlayer winnerPlayer = winner.GetComponent<MyNetworkPlayer>();
         FindObjectOfType<UIManager>().ShowWinner(winnerPlayer.DisplayName);
     }
-
-   
-
     #endregion
+
+    public override void OnStartClient()
+    {
+        AuthorityChanged += OnAuthorityChanged;
+        HandleDisplayColorUpdate(displayColor, displayColor);
+        HandleDisplayNameUpdate(displayName, displayName);
+    }
+
+    public override void OnStopClient()
+    {
+        AuthorityChanged -= OnAuthorityChanged;
+    }
 }

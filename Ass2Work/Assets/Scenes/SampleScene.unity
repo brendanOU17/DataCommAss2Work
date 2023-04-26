@@ -297,7 +297,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &80201829
 RectTransform:
   m_ObjectHideFlags: 0
@@ -3198,7 +3198,7 @@ MonoBehaviour:
   dontDestroyOnLoad: 1
   runInBackground: 1
   autoStartServerBuild: 1
-  autoConnectClientBuild: 0
+  autoConnectClientBuild: 1
   sendRate: 30
   offlineScene: 
   onlineScene: 
@@ -3214,7 +3214,9 @@ MonoBehaviour:
   timeInterpolationGui: 0
   countdownTimer: {fileID: 1832739576}
   uiManager: {fileID: 1439036576}
+  mynetworkplayer: {fileID: 0}
   players: []
+  isTaggedPlayerPresent: 0
 --- !u!114 &1439036576
 MonoBehaviour:
   m_ObjectHideFlags: 0

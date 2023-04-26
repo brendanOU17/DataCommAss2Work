@@ -5,7 +5,10 @@ using Mirror;
 
 public class TaggedStatus : NetworkBehaviour
 {
+
      [SerializeField] private NetworkIdentity networkIdentity;
+
+
     [Server]
     public void TransferAuthority( NetworkConnectionToClient newOwnerConnection)
     {
@@ -31,4 +34,8 @@ public class TaggedStatus : NetworkBehaviour
 
     }
 
+    public void RemoveAuthority()
+    {
+        networkIdentity.RemoveClientAuthority();
+    }
 }

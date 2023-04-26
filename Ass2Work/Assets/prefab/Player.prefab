@@ -71,15 +71,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   syncDirection: 0
   syncMode: 0
-  syncInterval: 0.1
+  syncInterval: 0
   displayNameText: {fileID: 635555733180073406}
   displayColorRenderer: {fileID: 6992848244297664518}
-  displayName: Missing Name
-  displayColor: {r: 0.33578193, g: 1, b: 0, a: 1}
-  isTagged: 0
   taggedStatus: {fileID: 0}
+  playerMovement: {fileID: 604761870234185326}
   tagCooldown: 5
   taggedStatusObject: {fileID: 0}
+  isTagged: 0
 --- !u!114 &7289626452189671085
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -93,7 +92,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   syncDirection: 1
-  syncMode: 0
+  syncMode: 1
   syncInterval: 0
   target: {fileID: 5549453697797234228}
   clientAuthority: 0
@@ -125,6 +124,7 @@ MonoBehaviour:
   syncMode: 0
   syncInterval: 0.1
   agent: {fileID: 3108633868638383815}
+  movementSpeed: 5
 --- !u!195 &3108633868638383815
 NavMeshAgent:
   m_ObjectHideFlags: 0

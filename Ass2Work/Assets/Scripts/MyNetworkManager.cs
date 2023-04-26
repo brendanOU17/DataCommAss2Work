@@ -9,14 +9,22 @@ public class MyNetworkManager : NetworkManager
 
     public CountdownTimer countdownTimer;
     public UIManager uiManager;
-
+    public MyNetworkPlayer mynetworkplayer;
     public List<GameObject> players = new List<GameObject>();
+    public bool isTaggedPlayerPresent;
+ 
+
 
     public override void OnClientConnect()
     {
         base.OnClientConnect();
         Debug.Log("You have connected to the server");
+       
+
+
     }
+
+
 
     public override void OnServerAddPlayer(NetworkConnectionToClient conn)
     {
@@ -27,12 +35,19 @@ public class MyNetworkManager : NetworkManager
         player.SetDisplayName($"Player{numPlayers}");
         Color displayColor = Color.green;
         player.SetDisplayColor(displayColor);
-
         players.Add(conn.identity.gameObject);
+        RandomAssignAuthority(players);
 
+        Debug.Log($"Current number of players: {numPlayers}");
+
+    }
+
+    public void RandomAssignAuthority(List<GameObject> players)
+    {
+        Debug.Log("randomAssign is being used");
         if (players.Count > 1)
         {
-            bool isTaggedPlayerPresent = false;
+            isTaggedPlayerPresent = false;
 
             foreach (GameObject playerObj in players)
             {
@@ -46,28 +61,20 @@ public class MyNetworkManager : NetworkManager
 
             if (!isTaggedPlayerPresent)
             {
-                StartCoroutine(AssignAuthorityWithDelay(conn.identity, players));
+                Debug.Log($"Now Assgining TaggedPlayer");
+                MyNetworkPlayer taggedPlayer = players[Random.Range(0, players.Count)].GetComponent<MyNetworkPlayer>();
+                taggedPlayer.SetDisplayColor(Color.red);
+                taggedPlayer.isTagged = true;
+                taggedPlayer.GetComponent<NetworkIdentity>();
+                Debug.Log($"Tagged Player: {taggedPlayer.DisplayName} (isTagged: {taggedPlayer.isTagged})");
+                countdownTimer.StartTimer();
+                uiManager.UpdateTimerDisplay(countdownTimer.RemainingTime);
+
+                TaggedStatus taggedStatusInstance = FindObjectOfType<TaggedStatus>();
+                taggedStatusInstance.AssignClientAuthority(taggedPlayer.connectionToClient);
+                Debug.Log($"Tagged Player {taggedPlayer.DisplayName} has authority? : {taggedStatusInstance.isOwned}");
             }
         }
-
-        Debug.Log($"Current number of players: {numPlayers}");
-
-    }
-
-    public IEnumerator AssignAuthorityWithDelay(NetworkIdentity taggedPlayerIdentity, List<GameObject> players)
-    {
-        yield return new WaitForSeconds(0.1f);
-        Debug.Log($"Now Assgining TaggedPlayer");
-        MyNetworkPlayer taggedPlayer = players[Random.Range(1, players.Count)].GetComponent<MyNetworkPlayer>();
-        taggedPlayer.SetDisplayColor(Color.red);
-        taggedPlayer.isTagged = true;
-        taggedPlayer.GetComponent<NetworkIdentity>();
-        Debug.Log($"Tagged Player: {taggedPlayer.DisplayName} (isTagged: {taggedPlayer.isTagged})");
-        countdownTimer.StartTimer();
-        uiManager.UpdateTimerDisplay(countdownTimer.RemainingTime);
-        TaggedStatus taggedStatusInstance = FindObjectOfType<TaggedStatus>();
-        taggedStatusInstance.AssignClientAuthority(taggedPlayerIdentity.connectionToClient);
-        Debug.Log($"Tagged Player {taggedPlayer.DisplayName} has authority? : {taggedStatusInstance.isOwned}");
     }
 
 
