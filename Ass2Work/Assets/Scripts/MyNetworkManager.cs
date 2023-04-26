@@ -9,8 +9,14 @@ public class MyNetworkManager : NetworkManager
 
     public CountdownTimer countdownTimer;
     public UIManager uiManager;
-    [SerializeField] private GameObject authorityPickupPrefab;
+    public GameObject authorityPickupPrefab;
+    public List<GameObject> players = new List<GameObject>();
     public const int MaxPlayers = 8;
+    private bool authorityPickupSpawned = false;
+
+
+
+
 
     public override void OnClientConnect()
     {
@@ -23,54 +29,55 @@ public class MyNetworkManager : NetworkManager
 
     public override void OnServerAddPlayer(NetworkConnectionToClient conn)
     {
-       
-
-        Transform startPos = GetStartPosition();
-        GameObject player = startPos != null
-            ? Instantiate(playerPrefab, startPos.position, startPos.rotation)
-            : Instantiate(playerPrefab);
-
-        MyNetworkPlayer networkPlayer = player.GetComponent<MyNetworkPlayer>();
-       
-        networkPlayer.SetDisplayName($"Player{numPlayers}");
-        Color displayColor = Color.green;
-        networkPlayer.SetDisplayColor(displayColor);
-      
-        NetworkServer.AddPlayerForConnection(conn, player);
-
-        if (NetworkServer.connections.Count > 1)
+        if (players.Count < MaxPlayers)
         {
-            SpawnAuthorityPickup(conn);
-            countdownTimer.StartTimer();
-            uiManager.UpdateTimerDisplay(countdownTimer.RemainingTime);
-        }
+                base.OnServerAddPlayer(conn);
+                Debug.Log($"Player connection: {conn}"); // Check the player's connection value
+                MyNetworkPlayer player = conn.identity.GetComponent<MyNetworkPlayer>();
 
-        Debug.Log($"Current number of players: {numPlayers}");
+                player.SetDisplayName($"Player{numPlayers}");
+                Color displayColor = Color.green;
+                player.SetDisplayColor(displayColor);
+                players.Add(conn.identity.gameObject);
+
+
+                if (players.Count > 1 && !authorityPickupSpawned )
+                {
+                    
+                        SpawnAuthorityPickup(conn);
+                        authorityPickupSpawned = true;
+                        countdownTimer.StartTimer();
+                        uiManager.UpdateTimerDisplay(countdownTimer.RemainingTime);
+                    
+                }
+
+                Debug.Log($"Current number of players: {numPlayers}");
+        }
+       
     }
 
     public override void OnServerDisconnect(NetworkConnectionToClient conn)
     {
+        // Find the AuthorityPickup object with authority
+        AuthorityPickup authorityPickup = FindObjectOfType<AuthorityPickup>();
+        if (authorityPickup != null && authorityPickup.connectionToClient == conn)
+        {
+            // Remove authority from the client before disconnecting
+            authorityPickup.GetComponent<NetworkIdentity>().RemoveClientAuthority();
+        }
+        players.Remove(conn.identity.gameObject);
+
+        if (players.Count == 1)
+        {
+            MyNetworkPlayer remainingPlayer = players[0].GetComponent<MyNetworkPlayer>();
+            remainingPlayer.RpcDeclareWinner(players[0]);
+ 
+        }
+
         base.OnServerDisconnect(conn);
 
-        if (NetworkServer.connections.Count == 1)
-        {
-            NetworkServer.connections[0].identity.GetComponent<MyNetworkPlayer>().RpcDeclareWinner(NetworkServer.connections[0].identity.gameObject);
-        }
+       
     }
-
-    public void SubmitPlayerName(string playerName)
-    {
-        if (string.IsNullOrWhiteSpace(playerName))
-        {
-            Debug.LogWarning("Player name cannot be empty");
-            return;
-        }
-
-        // Set player name and connect to the server
-        PlayerPrefs.SetString("playerName", playerName);
-        StartClient();
-    }
-
 
     #region Server
     [Server]
@@ -82,9 +89,7 @@ public class MyNetworkManager : NetworkManager
         Vector3 randomSpawnPosition = new Vector3(randomX, 0f, randomZ);
 
         GameObject pickup = Instantiate(authorityPickupPrefab, randomSpawnPosition, Quaternion.identity);
-        NetworkServer.Spawn(pickup);
-
-        pickup.GetComponent<AuthorityPickup>().AssignServerAuthority();
+        NetworkServer.Spawn(pickup); // Spawn the pickup on the network
 
     }
 

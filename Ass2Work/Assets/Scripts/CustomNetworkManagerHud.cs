@@ -9,19 +9,17 @@ public class CustomNetworkManagerHud : MonoBehaviour
     public NetworkManager networkManager;
     public Button hostButton;
     public Button joinButton;
-    public Button serverButton;
     public Button stopHostButton;
     public Button stopClientButton;
-    public Button stopServerButton;
+
 
     private void Start()
     {
         hostButton.onClick.AddListener(StartHost);
         joinButton.onClick.AddListener(StartClient);
-        serverButton.onClick.AddListener(StartSever);
         stopHostButton.onClick.AddListener(StopHost);
         stopClientButton.onClick.AddListener(StopClient);
-        stopServerButton.onClick.AddListener(StopServer);
+
     }
 
     public void StartHost()
@@ -29,7 +27,6 @@ public class CustomNetworkManagerHud : MonoBehaviour
         networkManager.StartHost();
         hostButton.gameObject.SetActive(false);
         joinButton.gameObject.SetActive(false);
-        serverButton.gameObject.SetActive(false);
         stopHostButton.gameObject.SetActive(true);
     }
 
@@ -38,7 +35,6 @@ public class CustomNetworkManagerHud : MonoBehaviour
         networkManager.StartClient();
         hostButton.gameObject.SetActive(false);
         joinButton.gameObject.SetActive(false);
-        serverButton.gameObject.SetActive(false);
         stopClientButton.gameObject.SetActive(true);
     }
 
@@ -47,8 +43,6 @@ public class CustomNetworkManagerHud : MonoBehaviour
         networkManager.StartServer();
         hostButton.gameObject.SetActive(false);
         joinButton.gameObject.SetActive(false);
-        serverButton.gameObject.SetActive(false);
-        stopServerButton.gameObject.SetActive(true );
 
     }
 
@@ -57,7 +51,6 @@ public class CustomNetworkManagerHud : MonoBehaviour
         networkManager.StopHost();
         hostButton.gameObject.SetActive(true);
         joinButton.gameObject.SetActive(true);
-        serverButton.gameObject.SetActive(true);
         stopHostButton.gameObject.SetActive(false);
     }
 
@@ -67,7 +60,6 @@ public class CustomNetworkManagerHud : MonoBehaviour
         networkManager.StopClient();
         hostButton.gameObject.SetActive(true);
         joinButton.gameObject.SetActive(true);
-        serverButton.gameObject.SetActive(true);
         stopClientButton.gameObject.SetActive(false);
 
     }
@@ -77,7 +69,6 @@ public class CustomNetworkManagerHud : MonoBehaviour
         networkManager.StopServer();
         hostButton.gameObject.SetActive(true);
         joinButton.gameObject.SetActive(true);
-        serverButton.gameObject.SetActive(true);
-        stopServerButton.gameObject.SetActive(false);
+
     }
 }
